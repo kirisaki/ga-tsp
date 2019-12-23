@@ -1,4 +1,17 @@
-type Gene = Vec<usize>;
+use rand::seq::SliceRandom;
+
+#[derive(Debug, Clone, PartialEq)]
+struct Gene {
+    gene: Vec<usize>,
+}
+
+impl Gene {
+    fn new(rand: &mut rand::rngs::ThreadRng, x: usize) -> Gene {
+        let mut gene: Vec<usize> = (0..x).collect();
+        gene.shuffle(rand);
+        Gene{gene}
+    }
+}
 
 #[derive(Debug, Clone)]
 struct Nodes {
@@ -15,7 +28,7 @@ impl Nodes {
         }
     }
     fn cost(self, g: Gene) -> Option<f64> {
-        let mut sorted = g.clone();
+        let mut sorted = g.clone().gene;
         sorted.sort();
         for n in 0..sorted.len() {
             if sorted[n] != n {
@@ -23,8 +36,8 @@ impl Nodes {
             }
         }
         let mut total = 0f64;
-        for n in 0..g.len() - 1{
-            match self.clone().dist(g[n], g[n+1]) {
+        for n in 0..g.gene.len() - 1{
+            match self.clone().dist(g.gene[n], g.gene[n+1]) {
                 None => return None,
                 Some(v) => total += v,
             }
@@ -87,7 +100,7 @@ mod tests {
             Node{x:1.0, y:2.0},
             Node{x:3.0, y:4.0},
         ]};
-        let d = ns.cost(vec![0, 1]).unwrap();
+        let d = ns.cost(Gene{gene: vec![0, 1]}).unwrap();
         assert!(2.8 < d && d < 2.9  , "cost");
     }
 
@@ -97,8 +110,15 @@ mod tests {
             Node{x:1.0, y:2.0},
             Node{x:3.0, y:4.0},
         ]};
-        let d = ns.cost(vec![1, 1]);
+        let d = ns.cost(Gene{gene: vec![1, 1]});
         assert_eq!(d, None);
     }
 
+    #[test]
+    fn new_gene() {
+        let mut rand = rand::thread_rng();
+        let a = Gene::new(&mut rand, 8);
+        let b = Gene::new(&mut rand, 8);
+        assert_ne!(a,b);
+    }
 }
