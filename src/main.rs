@@ -53,6 +53,52 @@ fn main() {
 mod tests {
     use crate::*;
 
-    
+    #[test]
+    fn dist_node() {
+        let a = Node{x: 1.0, y: 2.0};
+        let b = Node{x: 3.0, y: 4.0};
+        let d = a.dist_to(b);
+        assert!(2.8 < d && d < 2.9, "dist");
+    }
+
+    #[test]
+    fn dist_nodes() {
+        let ns = Nodes{nodes: vec![
+            Node{x:1.0, y:2.0},
+            Node{x:3.0, y:4.0},
+        ]};
+        let d = ns.dist(0, 1).unwrap();
+        assert!(2.8 < d && d < 2.9, "dist");
+    }
+
+    #[test]
+    fn dist_nodes_not_exist() {
+        let ns = Nodes{nodes: vec![
+            Node{x:1.0, y:2.0},
+            Node{x:3.0, y:4.0},
+        ]};
+        let d = ns.dist(0, 3);
+        assert_eq!(d, None);
+    }
+
+    #[test]
+    fn cost() {
+        let ns = Nodes{nodes: vec![
+            Node{x:1.0, y:2.0},
+            Node{x:3.0, y:4.0},
+        ]};
+        let d = ns.cost(vec![0, 1]).unwrap();
+        assert!(2.8 < d && d < 2.9  , "cost");
+    }
+
+    #[test]
+    fn cost_failed() {
+        let ns = Nodes{nodes: vec![
+            Node{x:1.0, y:2.0},
+            Node{x:3.0, y:4.0},
+        ]};
+        let d = ns.cost(vec![1, 1]);
+        assert_eq!(d, None);
+    }
 
 }
