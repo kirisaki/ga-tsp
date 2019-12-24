@@ -1,28 +1,59 @@
+use std::io::{Read, BufReader, BufRead};
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
 use rand::Rng;
 
 #[derive(Debug, Clone)]
-struct Popuration {
-    pops: Vec<Gene>,
+struct World {
+    pops: Popuration,
     max_pops: usize,
     generation: u64,
     crossover_rate: f64,
     mutation_rate: f64,
     rand: StdRng,
+    nodes: Nodes,
 }
 
-impl Popuration {
-    fn new(seed: [u8;32], len: usize, max_pops: usize) -> Popuration {
-        let mut rand: rand::rngs::StdRng = rand::SeedableRng::from_seed(seed);
-        let pops = (0..max_pops).map(|_|{Gene::new(&mut rand, len)}).collect();
-        Popuration{
+impl World {
+    fn new(rand: StdRng, fname: &str, max_pops: usize) -> World {
+        let nodes = Nodes::new(std::fs::File::open(fname).unwrap());
+        let pops = Popuration::new(rand.clone(), nodes.nodes.len(), max_pops);
+        World{
             pops,
             max_pops,
             generation: 0,
             crossover_rate: 0.7,
-            mutation_rate: 0.1,
+            mutation_rate: 0.01,
             rand,
+            nodes,
+        }
+    }
+    fn crossover_rate(&mut self, rate: f64) -> Result<&mut World, &str> {
+        if 0.0 < rate || rate < 1.0 {
+            return Err("crossover rate shoud be between 0.0 to 1.0");
+        };
+        self.crossover_rate = rate;
+        Ok(self)
+    }
+    fn mutation_rate(&mut self, rate: f64) -> Result<&mut World, &str> {
+        if 0.0 < rate || rate < 1.0 {
+            return Err("mutation rate shoud be between 0.0 to 1.0");
+        };
+        self.mutation_rate = rate;
+        Ok(self)
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Popuration {
+    pops: Vec<Gene>,
+}
+
+impl Popuration {
+    fn new(mut rand: StdRng, len: usize, max_pops: usize) -> Popuration {
+        let pops = (0..max_pops).map(|_|{Gene::new(&mut rand, len)}).collect();
+        Popuration{
+            pops,
         }
     }
 }
@@ -101,6 +132,17 @@ struct Nodes {
 }
 
 impl Nodes {
+    fn new<R: Read>(r: R) -> Nodes {
+        let mut nodes = vec![];
+        for line in BufReader::new(r).lines(){
+            let l = line.unwrap();
+            let coords: Vec<&str> = l.split(' ').collect();
+            let x = coords[0].parse::<f64>().unwrap();
+            let y = coords[1].parse::<f64>().unwrap();
+            nodes.push(Node{x, y});
+        };
+        Nodes{nodes}
+    }
     fn dist(self, n: usize, m: usize) -> Option<f64> {
         let l = self.nodes.len();
         if n > l || m > l {
