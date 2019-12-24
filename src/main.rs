@@ -5,7 +5,7 @@ use rand::Rng;
 
 #[derive(Debug, Clone)]
 struct World {
-    pops: Popuration,
+    pops: Population,
     max_pops: usize,
     generation: u64,
     crossover_rate: f64,
@@ -17,7 +17,7 @@ struct World {
 impl World {
     fn new(rand: StdRng, fname: &str, max_pops: usize) -> World {
         let nodes = Nodes::new(std::fs::File::open(fname).unwrap());
-        let pops = Popuration::new(rand.clone(), nodes.nodes.len(), max_pops);
+        let pops = Population::new(rand.clone(), nodes.nodes.len(), max_pops);
         World{
             pops,
             max_pops,
@@ -54,7 +54,7 @@ impl World {
                 return self.pops.pops[i].clone();
             }
         }
-        panic!("popuration exausted")
+        panic!("population exausted")
     }
     fn step(&mut self) {
         let mut new_pops = vec![];
@@ -76,18 +76,19 @@ impl World {
 
             }
         }
+        self.pops = Population{pops: new_pops};
     }
 }
 
 #[derive(Debug, Clone)]
-struct Popuration {
+struct Population {
     pops: Vec<Gene>,
 }
 
-impl Popuration {
-    fn new(mut rand: StdRng, len: usize, max_pops: usize) -> Popuration {
+impl Population {
+    fn new(mut rand: StdRng, len: usize, max_pops: usize) -> Population {
         let pops = (0..max_pops).map(|_|{Gene::new(&mut rand, len)}).collect();
-        Popuration{
+        Population{
             pops,
         }
     }
@@ -218,10 +219,10 @@ impl Node {
 }
 
 fn main() {
-    let rand: rand::rngs::StdRng = rand::SeedableRng::from_seed([42u8; 32]);
+    let rand: rand::rngs::StdRng = rand::SeedableRng::from_seed([2u8; 32]);
     let mut world = World::new(rand, "./ulysses16.tsp", 10);
     world.crossover_rate(0.5).unwrap();
-    for _ in 0..1000 {
+    for _ in 0..100 {
         world.step();
     };
     for p in world.pops.pops {
