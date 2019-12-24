@@ -42,6 +42,20 @@ impl World {
         self.mutation_rate = rate;
         Ok(self)
     }
+    fn select(&mut self) -> Gene {
+        let nodes = self.nodes.clone();
+        let total = self.pops.pops.iter().fold(0.0, |a, x|{a + nodes.clone().cost(x).unwrap()});
+        let ps: Vec<f64> = self.pops.pops.iter().map(|x|{nodes.clone().cost(x).unwrap()/total}).collect();
+        let q = self.rand.gen_range(0.0, 1.0);
+        let mut p = 0.0;
+        for i in 0..ps.len() {
+            p += ps[i];
+            if p > q {
+                return self.pops.pops[i].clone();
+            }
+        }
+        panic!("popuration exausted")
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -151,7 +165,7 @@ impl Nodes {
             Some(self.nodes[n].dist_to(self.nodes[m]))
         }
     }
-    fn cost(self, g: Gene) -> Option<f64> {
+    fn cost(self, g: &Gene) -> Option<f64> {
         let mut sorted = g.clone().gene;
         sorted.sort();
         for n in 0..sorted.len() {
@@ -224,7 +238,7 @@ mod tests {
             Node{x:1.0, y:2.0},
             Node{x:3.0, y:4.0},
         ]};
-        let d = ns.cost(Gene{gene: vec![0, 1]}).unwrap();
+        let d = ns.cost(&Gene{gene: vec![0, 1]}).unwrap();
         assert!(2.8 < d && d < 2.9  , "cost");
     }
 
@@ -234,7 +248,7 @@ mod tests {
             Node{x:1.0, y:2.0},
             Node{x:3.0, y:4.0},
         ]};
-        let d = ns.cost(Gene{gene: vec![1, 1]});
+        let d = ns.cost(&Gene{gene: vec![1, 1]});
         assert_eq!(d, None);
     }
 
