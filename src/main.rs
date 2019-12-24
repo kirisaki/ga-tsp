@@ -1,5 +1,31 @@
+use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
 use rand::Rng;
+
+#[derive(Debug, Clone)]
+struct Popuration {
+    pops: Vec<Gene>,
+    max_pops: usize,
+    generation: u64,
+    crossover_rate: f64,
+    mutation_rate: f64,
+    rand: StdRng,
+}
+
+impl Popuration {
+    fn new(seed: [u8;32], len: usize, max_pops: usize) -> Popuration {
+        let mut rand: rand::rngs::StdRng = rand::SeedableRng::from_seed(seed);
+        let pops = (0..max_pops).map(|_|{Gene::new(&mut rand, len)}).collect();
+        Popuration{
+            pops,
+            max_pops,
+            generation: 0,
+            crossover_rate: 0.7,
+            mutation_rate: 0.1,
+            rand,
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 struct Gene {
@@ -7,12 +33,12 @@ struct Gene {
 }
 
 impl Gene {
-    fn new(rand: &mut rand::rngs::StdRng, x: usize) -> Gene {
+    fn new(rand: &mut StdRng, x: usize) -> Gene {
         let mut gene: Vec<usize> = (0..x).collect();
         gene.shuffle(rand);
         Gene{gene}
     }
-    fn crossover(&mut self, rand: &mut rand::rngs::StdRng,  g1_: &mut Gene) {
+    fn crossover(&mut self, rand: &mut StdRng,  g1_: &mut Gene) {
         if self.gene.len() != g1_.gene.len() {
             panic!("different length")
         };
