@@ -1,4 +1,5 @@
 use rand::seq::SliceRandom;
+use rand::Rng;
 
 #[derive(Debug, Clone, PartialEq)]
 struct Gene {
@@ -6,12 +7,62 @@ struct Gene {
 }
 
 impl Gene {
-    fn new(rand: &mut rand::rngs::ThreadRng, x: usize) -> Gene {
+    fn new(rand: &mut rand::rngs::StdRng, x: usize) -> Gene {
         let mut gene: Vec<usize> = (0..x).collect();
         gene.shuffle(rand);
         Gene{gene}
     }
+    fn crossover(&mut self, rand: &mut rand::rngs::StdRng,  g1_: &mut Gene) {
+        if self.gene.len() != g1_.gene.len() {
+            panic!("different length")
+        };
+        let g0 = self.clone();
+        let g1 = g1_.clone();
+        let n = rand.gen_range(0, g0.gene.len());
+        let (g0_head, g0_tail) = g0.gene.split_at(n);
+        let (g1_head, g1_tail) = g1.gene.split_at(n);
+        let g0_tail_ordered = order(g0_tail.to_vec());
+        let g1_tail_ordered = order(g1_tail.to_vec());
+        let mut g0_tail_res = vec![];
+        let mut g1_tail_res = vec![];
+        for i in 0..g0_tail.len() {
+            let (k0, _) = g0_tail_ordered[i];
+            let (k1, _) = g1_tail_ordered[i];
+            let n0 = find(g0_tail_ordered.clone(), k1).unwrap();
+            let n1 = find(g1_tail_ordered.clone(), k0).unwrap();
+            g0_tail_res.push(g0_tail[n0]);
+            g1_tail_res.push(g1_tail[n1]);
+        };
+        self.gene = [g0_head.to_vec(), g0_tail_res].concat();
+        g1_.gene = [g1_head.to_vec(), g1_tail_res].concat();
+    }
 }
+
+fn find(vec: Vec<(usize, usize)>, n: usize) -> Option<usize> {
+    for i in 0..vec.len() {
+        let (j, _) = vec[i];
+        if j == n {
+           return Some(i);
+        }
+    };
+    None
+}
+
+fn order(vec: Vec<usize>) -> Vec<(usize, usize)> {
+    let mut v = vec.clone();
+    v.sort();
+    let mut order = vec![];
+    for n in 0..v.len() {
+        order.push((n, v[n]))
+    };
+    let mut res = vec![];
+    for u in vec {
+        let i = order.binary_search_by(|(_, x)| x.cmp(&u) ).unwrap();
+        res.push(order[i]);
+    }
+    res
+}
+
 
 #[derive(Debug, Clone)]
 struct Nodes {
@@ -116,9 +167,22 @@ mod tests {
 
     #[test]
     fn new_gene() {
-        let mut rand = rand::thread_rng();
+        let mut rand: rand::rngs::StdRng = rand::SeedableRng::from_seed([42u8; 32]);
         let a = Gene::new(&mut rand, 8);
-        let b = Gene::new(&mut rand, 8);
-        assert_ne!(a,b);
+        assert_eq!(a,Gene{gene: vec![5, 1, 4, 6, 7, 3, 0, 2]});
+    }
+    #[test]
+    fn crossover_gene() {
+        let mut rand: rand::rngs::StdRng = rand::SeedableRng::from_seed([12u8; 32]);
+        let mut a = Gene::new(&mut rand, 8);
+        let mut b = Gene::new(&mut rand, 8);
+        a.crossover(&mut rand, &mut b);
+        assert_eq!(a, Gene{gene: vec![5, 3, 1, 4, 2, 7, 0, 6]});
+        assert_eq!(b, Gene{gene: vec![6, 5, 3, 1, 0, 4, 7, 2]});
+            }
+    #[test]
+    fn test_order() {
+        let vec = vec![5, 3, 8, 7];
+        assert_eq!(order(vec), vec![(1, 5), (0, 3), (3, 8), (2, 7)])
     }
 }
