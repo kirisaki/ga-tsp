@@ -36,6 +36,11 @@ impl Gene {
         self.gene = [g0_head.to_vec(), g0_tail_res].concat();
         g1_.gene = [g1_head.to_vec(), g1_tail_res].concat();
     }
+    fn mutate(&mut self, rand: &mut rand::rngs::StdRng) {
+        let j = rand.gen_range(0, self.gene.len());
+        let k = rand.gen_range(0, self.gene.len());
+        self.gene.swap(j, k);
+    }
 }
 
 fn find(vec: Vec<(usize, usize)>, n: usize) -> Option<usize> {
@@ -180,6 +185,13 @@ mod tests {
         assert_eq!(a, Gene{gene: vec![5, 3, 1, 4, 2, 7, 0, 6]});
         assert_eq!(b, Gene{gene: vec![6, 5, 3, 1, 0, 4, 7, 2]});
             }
+    #[test]
+    fn mutate_gene() {
+        let mut rand: rand::rngs::StdRng = rand::SeedableRng::from_seed([42u8; 32]);
+        let mut a = Gene::new(&mut rand, 8);
+        a.mutate(&mut rand);
+        assert_eq!(a, Gene{gene: vec![6, 1, 4, 5, 7, 3, 0, 2]});
+    }
     #[test]
     fn test_order() {
         let vec = vec![5, 3, 8, 7];
