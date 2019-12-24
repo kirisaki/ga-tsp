@@ -29,14 +29,14 @@ impl World {
         }
     }
     fn crossover_rate(&mut self, rate: f64) -> Result<&mut World, &str> {
-        if 0.0 < rate || rate < 1.0 {
+        if rate < 0.0 || 1.0 < rate {
             return Err("crossover rate shoud be between 0.0 to 1.0");
         };
         self.crossover_rate = rate;
         Ok(self)
     }
     fn mutation_rate(&mut self, rate: f64) -> Result<&mut World, &str> {
-        if 0.0 < rate || rate < 1.0 {
+        if rate < 0.0 || 1.0 < rate {
             return Err("mutation rate shoud be between 0.0 to 1.0");
         };
         self.mutation_rate = rate;
@@ -55,6 +55,27 @@ impl World {
             }
         }
         panic!("popuration exausted")
+    }
+    fn step(&mut self) {
+        let mut new_pops = vec![];
+        while new_pops.len() < self.max_pops {
+            let q = self.rand.gen_range(0.0, 1.0);
+            if q < self.crossover_rate {
+                let mut x = self.select();
+                let mut y = self.select();
+                x.crossover(&mut self.rand, &mut y);
+                new_pops.push(x);
+                new_pops.push(y);
+            } else if self.crossover_rate < q && q < self.crossover_rate + self.mutation_rate{
+                let mut x = self.select();
+                x.mutate(&mut self.rand);
+                new_pops.push(x);
+            } else {
+                let x = self.select();
+                new_pops.push(x);
+
+            }
+        }
     }
 }
 
@@ -197,7 +218,15 @@ impl Node {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let rand: rand::rngs::StdRng = rand::SeedableRng::from_seed([42u8; 32]);
+    let mut world = World::new(rand, "./ulysses16.tsp", 10);
+    world.crossover_rate(0.5).unwrap();
+    for _ in 0..1000 {
+        world.step();
+    };
+    for p in world.pops.pops {
+        println!("{:?}", p);
+    }
 }
 
 #[cfg(test)]
