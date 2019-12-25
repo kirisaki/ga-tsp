@@ -45,7 +45,7 @@ impl World {
     fn select(&mut self) -> Gene {
         let nodes = self.nodes.clone();
         let total = self.pops.pops.iter().fold(0.0, |a, x|{a + nodes.clone().cost(x).unwrap()});
-        let ps: Vec<f64> = self.pops.pops.iter().map(|x|{nodes.clone().cost(x).unwrap()/total}).collect();
+        let ps: Vec<f64> = self.pops.pops.iter().map(|x|{1.0 - nodes.clone().cost(x).unwrap()/total}).collect();
         let q = self.rand.gen_range(0.0, 1.0);
         let mut p = 0.0;
         for i in 0..ps.len() {
@@ -214,19 +214,24 @@ struct Node {
 
 impl Node {
     fn dist_to(self, b: Node) -> f64 {
-        ((self.x - b.x).powi(2i32) + (self.y - b.y).powi(2i32)).sqrt()
+        ((self.x - b.x).powi(2i32) + (self.y - b.y).powi(2i32))
     }
 }
 
 fn main() {
-    let rand: rand::rngs::StdRng = rand::SeedableRng::from_seed([2u8; 32]);
-    let mut world = World::new(rand, "./ulysses16.tsp", 10);
-    world.crossover_rate(0.5).unwrap();
+    let rand: rand::rngs::StdRng = rand::SeedableRng::from_seed([42u8; 32]);
+    let mut world = World::new(rand, "./ulysses16.tsp", 3);
+    //let mut world = World::new(rand, "./a280.tsp", 20);
+    //let mut world = World::new(rand, "./small.tsp", 100);
+    world.crossover_rate(0.6);
+    world.mutation_rate(0.05);
     for _ in 0..100 {
         world.step();
     };
-    for p in world.pops.pops {
-        println!("{:?}", p);
+    //println!("{:?}", world.clone().nodes.cost(&Gene{gene: vec![0, 13, 12, 11, 6, 5, 14, 4, 10, 8, 9, 15, 2, 1, 3, 7]}));
+    for p in world.clone().pops.pops {
+        let c = world.clone().nodes.cost(&p);
+        println!("{:?}, {:?}", p, c);
     }
 }
 
@@ -239,7 +244,8 @@ mod tests {
         let a = Node{x: 1.0, y: 2.0};
         let b = Node{x: 3.0, y: 4.0};
         let d = a.dist_to(b);
-        assert!(2.8 < d && d < 2.9, "dist");
+        println!("{:?}", d);
+        assert!(7.9 < d && d < 8.1, "dist");
     }
 
     #[test]
@@ -249,7 +255,8 @@ mod tests {
             Node{x:3.0, y:4.0},
         ]};
         let d = ns.dist(0, 1).unwrap();
-        assert!(2.8 < d && d < 2.9, "dist");
+        println!("{:?}", d);
+        assert!(7.9 < d && d < 8.1, "dist");
     }
 
     #[test]
@@ -269,7 +276,8 @@ mod tests {
             Node{x:3.0, y:4.0},
         ]};
         let d = ns.cost(&Gene{gene: vec![0, 1]}).unwrap();
-        assert!(2.8 < d && d < 2.9  , "cost");
+        println!("{:?}", d);
+        assert!(7.9 < d && d < 8.1  , "cost");
     }
 
     #[test]
